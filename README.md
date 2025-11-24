@@ -31,7 +31,7 @@ A full-featured blog application with user authentication, profiles, and blog ma
 -  Edit/Delete Comments (owner or admin only)
 
 ### Additional Features
--  CORS Enabled
+-  CORS Enabled (with explicit URL whitelist)
 -  Error Handling Middleware
 -  Input Validation
 -  MongoDB Connection with Error Handling
@@ -62,10 +62,16 @@ cp .env.example .env
 
 4. Update the `.env` file with your configuration:
 ```
-PORT=5000
+PORT=8000
 MONGODB_URI=mongodb://localhost:27017/blogdb
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
 JWT_EXPIRE=7d
+
+# CORS Configuration - Comma-separated list of allowed origins
+# Examples:
+# ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,https://yourdomain.com
+# If not set, defaults to: http://localhost:3000,http://localhost:3001,http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
 ```
 
 5. Make sure MongoDB is running on your system
@@ -223,5 +229,35 @@ Node-MongoDB/
 - JWT tokens for authentication
 - Protected routes with middleware
 - Input validation
-- CORS enabled for cross-origin requests
+- CORS enabled with explicit URL whitelist (only allowed origins can access the API)
+
+## CORS Configuration
+
+The application uses CORS with an explicit whitelist of allowed origins for security. Only the URLs specified in the `ALLOWED_ORIGINS` environment variable can make requests to the API.
+
+### Configuration
+
+Set the `ALLOWED_ORIGINS` environment variable in your `.env` file:
+
+```env
+# Single origin
+ALLOWED_ORIGINS=http://localhost:3000
+
+# Multiple origins (comma-separated)
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,https://yourdomain.com
+```
+
+### Default Origins
+
+If `ALLOWED_ORIGINS` is not set, the following defaults are used:
+- `http://localhost:3000`
+- `http://localhost:3001`
+- `http://localhost:5173` (Vite default port)
+
+### Important Notes
+
+- Requests with no origin (like mobile apps, Postman, or curl) are allowed
+- All other origins will receive a CORS error
+- Make sure to include your frontend URL(s) in the whitelist
+- In production, use your actual domain(s) instead of localhost
 

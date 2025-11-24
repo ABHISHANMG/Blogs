@@ -1,7 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const cors = require('cors');
 const connectDB = require('./config/db');
+const corsMiddleware = require('./config/cors');
 
 // Load env vars
 dotenv.config();
@@ -11,8 +11,8 @@ connectDB();
 
 const app = express();
 
-// Enable CORS
-app.use(cors());
+// Enable CORS with explicit URLs only
+app.use(corsMiddleware);
 
 // Body parser
 app.use(express.json());
