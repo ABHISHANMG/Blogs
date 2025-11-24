@@ -1,17 +1,72 @@
 const Blog = require('../models/Blog');
 
-// @desc    Get all blogs
+// @desc    Get all blogs with search, filter, and pagination
 // @route   GET /api/blogs
 // @access  Public
 exports.getBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find({ published: true })
+    const {
+      search,
+      category,
+      tag,
+      author,
+      featured,
+      page = 1,
+      limit = 10,
+      sort = '-createdAt',
+    } = req.query;
+
+    // Build query
+    const query = { published: true };
+
+    // Search by title or content
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    // Filter by category
+    if (category) {
+      query.category = category;
+    }
+
+    // Filter by tag
+    if (tag) {
+      query.tags = { $in: [tag] };
+    }
+
+    // Filter by author
+    if (author) {
+      query.author = author;
+    }
+
+    // Filter by featured
+    if (featured === 'true') {
+      query.featured = true;
+    }
+
+    // Pagination
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Execute query
+    const blogs = await Blog.find(query)
       .populate('author', 'name email profile')
-      .sort({ createdAt: -1 });
+      .sort(sort)
+      .skip(skip)
+      .limit(limitNum);
+
+    const total = await Blog.countDocuments(query);
 
     res.status(200).json({
       success: true,
       count: blogs.length,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
       blogs,
     });
   } catch (error) {
@@ -22,15 +77,25 @@ exports.getBlogs = async (req, res) => {
   }
 };
 
-// @desc    Get single blog
+// @desc    Get single blog by ID or slug
 // @route   GET /api/blogs/:id
 // @access  Public
 exports.getBlog = async (req, res) => {
   try {
-    const blog = await Blog.findById(req.params.id).populate(
-      'author',
-      'name email profile'
-    );
+    let blog;
+    
+    // Check if it's a valid ObjectId, otherwise search by slug
+    if (req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      blog = await Blog.findById(req.params.id).populate(
+        'author',
+        'name email profile'
+      );
+    } else {
+      blog = await Blog.findOne({ slug: req.params.id }).populate(
+        'author',
+        'name email profile'
+      );
+    }
 
     if (!blog) {
       return res.status(404).json({
@@ -61,6 +126,12 @@ exports.getBlog = async (req, res) => {
 exports.createBlog = async (req, res) => {
   try {
     req.body.author = req.user.id;
+    
+    // Generate excerpt from content if not provided
+    if (!req.body.excerpt && req.body.content) {
+      req.body.excerpt = req.body.content.substring(0, 200) + '...';
+    }
+    
     const blog = await Blog.create(req.body);
 
     const populatedBlog = await Blog.findById(blog._id).populate(
@@ -73,6 +144,13 @@ exports.createBlog = async (req, res) => {
       blog: populatedBlog,
     });
   } catch (error) {
+    // Handle duplicate slug error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'A blog with this title already exists',
+      });
+    }
     res.status(500).json({
       success: false,
       message: error.message,
@@ -209,6 +287,29 @@ exports.likeBlog = async (req, res) => {
     res.status(200).json({
       success: true,
       blog,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// @desc    Get featured blogs
+// @route   GET /api/blogs/featured
+// @access  Public
+exports.getFeaturedBlogs = async (req, res) => {
+  try {
+    const blogs = await Blog.find({ published: true, featured: true })
+      .populate('author', 'name email profile')
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    res.status(200).json({
+      success: true,
+      count: blogs.length,
+      blogs,
     });
   } catch (error) {
     res.status(500).json({

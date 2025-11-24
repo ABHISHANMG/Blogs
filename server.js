@@ -22,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/blogs', require('./routes/blogs'));
+app.use('/api/comments', require('./routes/comments'));
 
 // Health check route
 app.get('/api/health', (req, res) => {
@@ -38,6 +39,10 @@ app.use((req, res) => {
     message: 'Route not found',
   });
 });
+
+// Error handler (must be after routes)
+const errorHandler = require('./middleware/errorHandler');
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 8000;
 

@@ -4,13 +4,37 @@ A full-featured blog application with user authentication, profiles, and blog ma
 
 ## Features
 
-- User Registration & Login with JWT Authentication
-- User Profile Management
-- Blog CRUD Operations
-- CORS Enabled
-- Password Hashing with bcryptjs
-- Protected Routes with Middleware
-- Blog Likes & Views Tracking
+### Authentication & User Management
+-  User Registration & Login with JWT Authentication
+-  User Profile Management (bio, avatar, website)
+-  Password Change Functionality
+-  Password Hashing with bcryptjs
+-  Protected Routes with Middleware
+-  Role-based Access Control (User/Admin)
+
+### Blog Features
+-  Blog CRUD Operations
+-  Blog Categories (Technology, Lifestyle, Travel, Food, Health, Education, Business, Other)
+-  Featured Blogs
+-  Blog Slugs for SEO-friendly URLs
+-  Blog Excerpts (auto-generated)
+-  Blog Likes & Views Tracking
+-  Search Blogs (by title or content)
+-  Filter Blogs (by category, tag, author, featured)
+-  Pagination Support
+-  Sort Blogs (by date, views, likes)
+
+### Comments System
+-  Add Comments to Blogs
+-  Nested/Reply Comments (threaded comments)
+-  Like Comments
+-  Edit/Delete Comments (owner or admin only)
+
+### Additional Features
+-  CORS Enabled
+-  Error Handling Middleware
+-  Input Validation
+-  MongoDB Connection with Error Handling
 
 ## Tech Stack
 
@@ -61,6 +85,7 @@ npm start
 - `POST /api/auth/register` - Register a new user
 - `POST /api/auth/login` - Login user
 - `GET /api/auth/me` - Get current user (Protected)
+- `PUT /api/auth/change-password` - Change password (Protected)
 
 ### Users
 - `GET /api/users` - Get all users
@@ -68,13 +93,22 @@ npm start
 - `PUT /api/users/profile` - Update user profile (Protected)
 
 ### Blogs
-- `GET /api/blogs` - Get all published blogs
-- `GET /api/blogs/:id` - Get single blog
+- `GET /api/blogs` - Get all published blogs (with search, filter, pagination)
+  - Query params: `search`, `category`, `tag`, `author`, `featured`, `page`, `limit`, `sort`
+- `GET /api/blogs/featured` - Get featured blogs
+- `GET /api/blogs/:id` - Get single blog (by ID or slug)
 - `POST /api/blogs` - Create new blog (Protected)
 - `PUT /api/blogs/:id` - Update blog (Protected)
 - `DELETE /api/blogs/:id` - Delete blog (Protected)
 - `GET /api/blogs/user/:userId` - Get user's blogs
 - `PUT /api/blogs/:id/like` - Like/Unlike blog (Protected)
+
+### Comments
+- `GET /api/comments/blogs/:blogId/comments` - Get comments for a blog
+- `POST /api/comments/blogs/:blogId/comments` - Create comment (Protected)
+- `PUT /api/comments/:id` - Update comment (Protected)
+- `DELETE /api/comments/:id` - Delete comment (Protected)
+- `PUT /api/comments/:id/like` - Like/Unlike comment (Protected)
 
 ## Example API Usage
 
@@ -110,8 +144,46 @@ Content-Type: application/json
 {
   "title": "My First Blog Post",
   "content": "This is the content of my blog post...",
+  "excerpt": "Short description...",
+  "category": "Technology",
   "tags": ["nodejs", "express", "mongodb"],
-  "published": true
+  "image": "https://example.com/image.jpg",
+  "published": true,
+  "featured": false
+}
+```
+
+### Search and Filter Blogs
+```bash
+GET /api/blogs?search=nodejs&category=Technology&page=1&limit=10&sort=-createdAt
+```
+
+### Get Featured Blogs
+```bash
+GET /api/blogs/featured
+```
+
+### Add Comment to Blog
+```bash
+POST /api/comments/blogs/:blogId/comments
+Authorization: Bearer <your_jwt_token>
+Content-Type: application/json
+
+{
+  "content": "Great article!",
+  "parentComment": null  // Optional: for nested comments
+}
+```
+
+### Change Password
+```bash
+PUT /api/auth/change-password
+Authorization: Bearer <your_jwt_token>
+Content-Type: application/json
+
+{
+  "currentPassword": "oldpassword",
+  "newPassword": "newpassword123"
 }
 ```
 
@@ -124,16 +196,20 @@ Node-MongoDB/
 ├── controllers/
 │   ├── authController.js  # Authentication logic
 │   ├── userController.js  # User profile logic
-│   └── blogController.js  # Blog CRUD logic
+│   ├── blogController.js  # Blog CRUD logic
+│   └── commentController.js # Comment logic
 ├── middleware/
-│   └── auth.js            # JWT authentication middleware
+│   ├── auth.js            # JWT authentication middleware
+│   └── errorHandler.js    # Error handling middleware
 ├── models/
 │   ├── User.js            # User model
-│   └── Blog.js            # Blog model
+│   ├── Blog.js            # Blog model
+│   └── Comment.js         # Comment model
 ├── routes/
 │   ├── auth.js            # Auth routes
 │   ├── users.js           # User routes
-│   └── blogs.js           # Blog routes
+│   ├── blogs.js           # Blog routes
+│   └── comments.js        # Comment routes
 ├── .env.example           # Environment variables example
 ├── .gitignore
 ├── package.json

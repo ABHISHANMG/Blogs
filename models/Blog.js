@@ -6,9 +6,18 @@ const blogSchema = new mongoose.Schema({
     required: [true, 'Please add a title'],
     trim: true,
   },
+  slug: {
+    type: String,
+    unique: true,
+    lowercase: true,
+  },
   content: {
     type: String,
     required: [true, 'Please add content'],
+  },
+  excerpt: {
+    type: String,
+    maxlength: 500,
   },
   author: {
     type: mongoose.Schema.Types.ObjectId,
@@ -19,6 +28,11 @@ const blogSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  category: {
+    type: String,
+    enum: ['Technology', 'Lifestyle', 'Travel', 'Food', 'Health', 'Education', 'Business', 'Other'],
+    default: 'Other',
+  },
   tags: [
     {
       type: String,
@@ -28,6 +42,10 @@ const blogSchema = new mongoose.Schema({
   published: {
     type: Boolean,
     default: true,
+  },
+  featured: {
+    type: Boolean,
+    default: false,
   },
   views: {
     type: Number,
@@ -49,8 +67,14 @@ const blogSchema = new mongoose.Schema({
   },
 });
 
-// Update the updatedAt field before saving
+// Generate slug from title before saving
 blogSchema.pre('save', function (next) {
+  if (this.isModified('title') || this.isNew) {
+    this.slug = this.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
   this.updatedAt = Date.now();
   next();
 });

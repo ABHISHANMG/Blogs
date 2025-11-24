@@ -8,9 +8,11 @@ const {
   deleteBlog,
   getUserBlogs,
   likeBlog,
+  getFeaturedBlogs,
 } = require('../controllers/blogController');
 const { protect } = require('../middleware/auth');
 
+router.get('/featured', getFeaturedBlogs);
 router.get('/', getBlogs);
 router.get('/user/:userId', getUserBlogs);
 router.get('/:id', getBlog);
